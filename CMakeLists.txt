@@ -32,17 +32,11 @@ target_link_libraries(calculator
     ftxui::component
 )
 
-# Qt6 GUI
-find_package(Qt6 REQUIRED COMPONENTS Widgets Charts)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-
-add_executable(calculator_gui
-    gui/main.cpp
-    gui/mainwindow.cpp
-)
-target_link_libraries(calculator_gui
-    calc_lib
-    Qt6::Widgets
-    Qt6::Charts
-)
+# Qt6 GUI (optional - skipped in Docker)
+find_package(Qt6 QUIET COMPONENTS Widgets Charts)
+if(Qt6_FOUND)
+    set(CMAKE_AUTOMOC ON)
+    set(CMAKE_AUTORCC ON)
+    add_executable(calculator_gui gui/main.cpp gui/mainwindow.cpp)
+    target_link_libraries(calculator_gui calc_lib Qt6::Widgets Qt6::Charts)
+endif()

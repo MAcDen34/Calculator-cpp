@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  cli:
+    build: .
+    container_name: calculator_cli
+    stdin_open: true
+    tty: true
+    command: ./build/calculator
+
+  tests:
+    build: .
+    container_name: calculator_tests
+    command: ./build/tests
