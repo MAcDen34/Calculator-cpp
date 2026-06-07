@@ -1,35 +1,20 @@
 # Calculator-cpp
 
-A feature-rich C++ calculator with basic arithmetic, scientific functions, expression parsing, and a polished GUI — built with clean OOP architecture, tested with Google Test, and containerized with Docker.
+A feature-rich C++ calculator with a native Qt6 GUI, a fancy FTXUI terminal UI, scientific functions, function graphing, multithreading, and Docker support.
 
 ---
 
 ## Features
 
-- **Basic Arithmetic** — addition, subtraction, multiplication, division, modulo, power
-- **Scientific Functions** — trigonometry (sin, cos, tan, sec, csc, cot) in radians and degrees, logarithms (ln, log₁₀), exponential, square root, absolute value
-- **Expression Parser** — evaluates full expressions like `3 + 4 * (2 - 1) / 5 ^ 2` with correct operator precedence and parentheses
-- **Calculation History** — stores past expressions and results, grouped by time period
-- **Two Interfaces** — a native Qt6 GUI and an FTXUI terminal UI
-- **Dockerized** — runs tests and CLI in isolated containers
-
----
-
-## Interfaces
-
-### Qt6 GUI
-A native desktop app styled after the Apple Calculator — dark theme, round buttons, orange operators, and a slide-up history panel.
-
-- Switch between **Basic** and **Scientific** modes via the ⊞ menu
-- History panel opens via the ⏱ button or clicking the display
-- History grouped into **Today** and **Previous 7 Days**
-
-### FTXUI CLI
-An interactive terminal UI with a menu-driven flow.
-
-- Choose between Basic, Scientific, and History modes
-- Type expressions directly or select scientific functions from a list
-- Clear button and keyboard shortcuts supported
+- **Basic arithmetic** — addition, subtraction, multiplication, division, modulo, power
+- **Scientific functions** — sin, cos, tan, sec, csc, cot (radians and degrees), asin, acos, atan, ln, log₁₀, exp, 10ˣ, √, x², 1/x, |x|, n!, π, e
+- **Expression parser** — evaluates full expressions like `3 + 4 * sin(45)` with correct operator precedence
+- **Function grapher** — plots functions like sin(x), cos(x), x², sqrt(x) using QCustomPlot
+- **Calculation history** — grouped by Today / Previous 7 Days, logged asynchronously to `history.log`
+- **Two interfaces** — native Qt6 GUI and FTXUI terminal UI
+- **Multithreading** — async calculations keep the GUI responsive; background thread writes history
+- **Docker support** — containerized CLI and test suite via Docker Compose
+- **25 unit tests** — Google Test suite covering all operations and edge cases
 
 ---
 
@@ -38,80 +23,84 @@ An interactive terminal UI with a menu-driven flow.
 ```
 Calculator-cpp/
 ├── src/
-│   ├── calculator.cpp     # Core arithmetic + scientific logic
-│   ├── parser.cpp         # Expression parser (precedence, parentheses)
-│   ├── history.cpp        # Calculation history manager
-│   ├── server.cpp         # HTTP server (httplib)
-│   └── main.cpp           # Entry point
+│   ├── calculator.cpp        # Core arithmetic + scientific functions
+│   ├── parser.cpp            # Expression parser (handles precedence, parentheses)
+│   ├── history.cpp           # History storage
+│   └── history_writer.cpp    # Background thread — async file writer
 ├── include/
 │   ├── calculator.h
 │   ├── parser.h
 │   ├── history.h
-│   └── httplib.h
+│   ├── history_writer.h      # std::thread + std::mutex + condition_variable
+│   ├── calc_worker.h         # std::async + std::future
+│   └── thread_safe_queue.h   # Mutex-protected queue
 ├── cli/
-│   └── main.cpp           # FTXUI terminal UI
+│   └── main.cpp              # FTXUI terminal UI
 ├── gui/
-│   ├── main.cpp           # Qt6 entry point
-│   ├── mainwindow.cpp     # Qt6 main window
-│   └── mainwindow.h
+│   ├── main.cpp              # Qt6 app entry point
+│   ├── mainwindow.h/.cpp     # Apple Calculator-style Qt6 GUI
+│   ├── graphwindow.h/.cpp    # QCustomPlot function grapher
+│   └── qcustomplot/          # QCustomPlot source
 ├── tests/
-│   └── test_calculator.cpp  # Google Test suite (25 tests)
+│   └── test_calculator.cpp   # Google Test suite (25 tests)
+├── CMakeLists.txt
 ├── Dockerfile
-├── docker-compose.yml
-└── CMakeLists.txt
+└── docker-compose.yml
 ```
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
+| Component | Technology |
+|-----------|-----------|
 | Language | C++17 |
-| GUI | Qt6 (Widgets, Charts) |
+| GUI | Qt6 (Widgets, Charts, PrintSupport) |
+| Graphing | QCustomPlot 2.1.1 |
 | Terminal UI | FTXUI v5.0.0 |
-| Testing | Google Test 1.17.0 |
-| Build System | CMake 3.15+ |
-| Containerization | Docker + Docker Compose |
-| HTTP Server | cpp-httplib |
+| Testing | Google Test 1.14+ |
+| Build | CMake 3.15+ |
+| Threading | std::thread, std::mutex, std::async, std::future, std::atomic |
+| Containers | Docker + Docker Compose |
 
 ---
 
-## Getting Started
+## Threading Architecture
 
-### Prerequisites
-
-- macOS with Xcode Command Line Tools
-- [Homebrew](https://brew.sh)
-- CMake, Qt6, Google Test
-
-```bash
-xcode-select --install
-brew install cmake qt googletest
+```
+Main Thread (Qt6 GUI)
+    ├── CalcWorker          → std::async fires calculation on new thread
+    │                         result returned via QMetaObject::invokeMethod
+    └── HistoryWriter       → std::thread sleeping on condition_variable
+                              wakes when entry pushed to ThreadSafeQueue
+                              writes to history.log asynchronously
 ```
 
-### Build & Run (Local)
+---
+
+## Building Locally
+
+**Requirements:** CMake 3.15+, C++17 compiler, Google Test, Qt6, FTXUI (auto-fetched)
 
 ```bash
 git clone https://github.com/MAcDen34/Calculator-cpp.git
 cd Calculator-cpp
-
 mkdir build && cd build
 cmake ..
 make
 ```
 
-Run the GUI:
+**Run the GUI:**
 ```bash
 ./calculator_gui
 ```
 
-Run the CLI:
+**Run the CLI:**
 ```bash
 ./calculator
 ```
 
-Run tests:
+**Run tests:**
 ```bash
 ./tests
 ```
@@ -120,85 +109,74 @@ Run tests:
 
 ## Docker
 
-Build and run everything in containers — no local dependencies needed (GUI excluded).
-
 ```bash
-# Build all images
+# Build both images
 docker-compose build
 
-# Run the test suite
+# Run the test suite inside Docker
 docker-compose up tests
 
-# Run the CLI
-docker-compose up cli
+# Run the CLI interactively
+docker-compose run --rm cli
 ```
-
----
-
-## Running Tests
-
-25 tests across 2 suites:
-
-```
-CalculatorTest   (17 tests) — arithmetic, scientific functions, error handling
-ParserTest       (8 tests)  — expression parsing, precedence, edge cases
-```
-
-```bash
-cd build && ./tests
-# [  PASSED  ] 25 tests.
-```
-
----
-
-## OOP Architecture
-
-The project is built around three core classes:
-
-```
-Calculator          — encapsulates all math operations
-    └── inherits nothing, composed into GUI/CLI layers
-
-Parser              — recursive descent expression evaluator
-    └── uses Calculator internally
-
-History             — thread-safe history log
-    └── stores HistoryEntry { expression, result, timestamp }
-```
-
-Key C++ concepts demonstrated:
-- **Encapsulation** — private fields, public interfaces
-- **Inheritance** — extensible calculator hierarchy
-- **Polymorphism** — virtual dispatch across calculator types
-- **Exception handling** — custom `CalcError` for undefined operations
-- **Templates & STL** — `std::vector`, `std::string`, `std::fmod`
 
 ---
 
 ## Scientific Functions Reference
 
-| Function | Input | Notes |
-|---|---|---|
-| `sin`, `cos`, `tan` | radians | |
-| `sin_deg`, `cos_deg`, `tan_deg` | degrees | auto-converts |
-| `sec`, `csc`, `cot` | radians | throws on undefined angles |
-| `ln` | value > 0 | natural log |
-| `log10` | value > 0 | base-10 log |
-| `exp` | any | eˣ |
-| `sqrt` | value ≥ 0 | throws on negative |
-| `abs` | any | absolute value |
+| Function | Input | Description |
+|----------|-------|-------------|
+| `calc_sin(x)` | radians | Sine |
+| `calc_cos(x)` | radians | Cosine |
+| `calc_tan(x)` | radians | Tangent |
+| `calc_sec(x)` | radians | Secant (1/cos) |
+| `calc_csc(x)` | radians | Cosecant (1/sin) |
+| `calc_cot(x)` | radians | Cotangent (cos/sin) |
+| `calc_sin_deg(x)` | degrees | Sine (degree input) |
+| `calc_ln(x)` | x > 0 | Natural logarithm |
+| `calc_log10(x)` | x > 0 | Base-10 logarithm |
+| `calc_exp(x)` | any | eˣ |
+| `calc_sqrt(x)` | x ≥ 0 | Square root |
+| `calc_abs(x)` | any | Absolute value |
+
+---
+
+## GUI Features
+
+- Dark theme matching Apple Calculator
+- Round buttons with orange operators
+- Basic and Scientific modes (toggle via ⊞ menu)
+- History panel with slide-up animation (tap ⏱ or click display)
+- Function grapher (tap 📈) — plots sin, cos, tan, sqrt, ln, exp, x², 1/x, |x|
+- Auto-shrinking display font for long numbers
+- All calculations logged asynchronously to `history.log`
+
+---
+
+## Test Suite
+
+```
+25 tests across 2 suites:
+  CalculatorTest (17) — arithmetic, scientific, error handling
+  ParserTest     (8)  — expressions, precedence, parentheses, edge cases
+```
+
+Run with:
+```bash
+cd build && ./tests
+```
 
 ---
 
 ## Roadmap
 
-- [ ] Multithreading — async calc worker, history writer thread, thread-safe queue
-- [ ] Graphing — plot functions like `sin(x)`, `x²` with QCustomPlot
-- [ ] Memory functions — M+, M-, MR, MC
-- [ ] Unit converter mode
+- [ ] Python reverse project (same calculator rebuilt in Python)
+- [ ] Plot history of past results on the graph
+- [ ] HTTP server integration (already scaffolded in `src/server.cpp`)
+- [ ] CI/CD pipeline with GitHub Actions
 
 ---
 
 ## Author
 
-**Denzel Ngabo** — [@MAcDen34](https://github.com/MAcDen34)
+**Denzel Ngabo** — [GitHub](https://github.com/MAcDen34)
