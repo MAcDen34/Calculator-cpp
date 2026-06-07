@@ -392,7 +392,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
  
     // Graph button
     auto* graphBtn = new QToolButton();
-    graphBtn->setText("📈");
+    graphBtn->setText("Graph");
     graphBtn->setStyleSheet(R"(
         QToolButton { background-color: #3a3a3c; color: white;
                       border-radius: 14px; font-size: 16px; padding: 4px 10px; }
