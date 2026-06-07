@@ -46,8 +46,7 @@ static QString utilBtnStyle() { return R"(
 static QString sciBtnStyle() { return R"(
     QPushButton {
         background-color: #2c2c2e; color: #ff9f0a;
-        border-radius: 8px; font-size: 14px; font-weight: 500;
-        border: 1px solid #3a3a3c;
+        border-radius: 20px; font-size: 15px; font-weight: 500;
     }
     QPushButton:pressed { background-color: #ff9f0a; color: white; }
 )"; }
@@ -86,7 +85,8 @@ QPushButton* MainWindow::makeUtilBtn(const QString& label) {
  
 QPushButton* MainWindow::makeSciBtn(const QString& label) {
     auto* btn = new QPushButton(label);
-    btn->setFixedHeight(40);
+    btn->setMinimumHeight(52);
+    btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     btn->setStyleSheet(sciBtnStyle());
     connect(btn, &QPushButton::clicked, this, [this, label]() { onScientificFunction(label); });
     return btn;
@@ -273,11 +273,12 @@ void MainWindow::buildBasicPanel() {
 void MainWindow::buildScientificPanel() {
     scientific_widget_ = new QWidget();
     auto* mainLayout = new QVBoxLayout(scientific_widget_);
-    mainLayout->setSpacing(6);
+    mainLayout->setSpacing(4);
     mainLayout->setContentsMargins(14, 4, 14, 14);
  
     auto* sciGrid = new QGridLayout();
     sciGrid->setSpacing(6);
+    for (int c = 0; c < 5; c++) sciGrid->setColumnStretch(c, 1);
  
     QStringList row0 = {"sin",  "cos",  "tan",  "ln",   "log₁₀"};
     QStringList row1 = {"asin", "acos", "atan", "eˣ",   "10ˣ"  };
@@ -344,7 +345,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     });
     setWindowTitle("Calculator");
     setStyleSheet("QMainWindow, QWidget { background-color: #1c1c1e; }");
-    setFixedSize(400, 700);
+    setFixedSize(400, 820);
  
     auto* central = new QWidget(this);
     setCentralWidget(central);
