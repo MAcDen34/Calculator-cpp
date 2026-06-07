@@ -1,3 +1,4 @@
+#include <QDebug>
 #include "mainwindow.h"
 #include <QApplication>
 #include <QVBoxLayout>
