@@ -8,6 +8,7 @@ add_library(calc_lib
     src/calculator.cpp
     src/parser.cpp
     src/history.cpp
+    src/history_writer.cpp
 )
 
 # Google Test

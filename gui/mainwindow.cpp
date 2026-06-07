@@ -335,6 +335,12 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event) {
  
 // ── Constructor ───────────────────────────────────────────
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+    history_writer_ = new HistoryWriter();
+    calc_worker_    = new CalcWorker([this](double result, const std::string& err) {
+        QMetaObject::invokeMethod(this, [this, result, err]() {
+            onCalcResult(result, QString::fromStdString(err));
+        }, Qt::QueuedConnection);
+    });
     setWindowTitle("Calculator");
     setStyleSheet("QMainWindow, QWidget { background-color: #1c1c1e; }");
     setFixedSize(400, 700);
@@ -439,20 +445,9 @@ void MainWindow::onOperatorClicked(const QString& op) {
  
 void MainWindow::onEqualsClicked() {
     if (pending_op_.isEmpty() || current_input_.isEmpty()) return;
-    try {
-        double b      = current_input_.toDouble();
-        double result = calc_.evaluate(pending_value_, pending_op_.toStdString(), b);
-        QString res   = QString::number(result, 'g', 10);
-        QString expr  = QString::number(pending_value_) + " " + pending_op_ + " " + QString::number(b);
-        updateDisplay(res);
-        addToHistory(expr, res);
-        current_input_ = res;
-        pending_op_.clear();
-        result_shown_  = true;
-    } catch (const std::exception& e) {
-        updateDisplay(QString("Error: ") + e.what());
-        current_input_.clear(); pending_op_.clear();
-    }
+    updateDisplay("...");
+    pending_expr_ = QString::number(pending_value_) + " " + pending_op_ + " " + current_input_;
+    calc_worker_->compute(pending_expr_.toStdString());
 }
  
 void MainWindow::onClearClicked() {
@@ -516,4 +511,21 @@ void MainWindow::onScientificFunction(const QString& fn) {
         updateDisplay(QString("Error: ") + e.what());
         current_input_.clear();
     }
+}
+
+// ── Threading setup ───────────────────────────────────────
+void MainWindow::onCalcResult(double result, const QString& error) {
+    if (!error.isEmpty()) {
+        updateDisplay("Error: " + error);
+        current_input_.clear();
+        pending_op_.clear();
+        return;
+    }
+    QString res  = QString::number(result, 'g', 10);
+    updateDisplay(res);
+    addToHistory(pending_expr_, res);
+    history_writer_->enqueue(pending_expr_.toStdString() + " = " + res.toStdString());
+    current_input_ = res;
+    pending_op_.clear();
+    result_shown_  = true;
 }
