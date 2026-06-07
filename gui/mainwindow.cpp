@@ -1,5 +1,6 @@
 #include <QDebug>
 #include "mainwindow.h"
+#include "graphwindow.h"
 #include <QApplication>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -389,8 +390,24 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     modeBtn->setMenu(modeMenu);
     modeBtn->setPopupMode(QToolButton::InstantPopup);
  
+    // Graph button
+    auto* graphBtn = new QToolButton();
+    graphBtn->setText("📈");
+    graphBtn->setStyleSheet(R"(
+        QToolButton { background-color: #3a3a3c; color: white;
+                      border-radius: 14px; font-size: 16px; padding: 4px 10px; }
+        QToolButton::menu-indicator { image: none; width: 0px; }
+        QToolButton:pressed { background-color: #636366; }
+    )");
+    connect(graphBtn, &QToolButton::clicked, this, [this]() {
+        auto* gw = new GraphWindow(this);
+        gw->show();
+    });
+
     topBar->addWidget(histBtn);
     topBar->addStretch();
+    topBar->addWidget(graphBtn);
+    topBar->addSpacing(8);
     topBar->addWidget(modeBtn);
     root->addLayout(topBar);
  

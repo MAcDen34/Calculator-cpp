@@ -34,10 +34,15 @@ target_link_libraries(calculator
 )
 
 # Qt6 GUI (optional - skipped in Docker)
-find_package(Qt6 QUIET COMPONENTS Widgets Charts)
+find_package(Qt6 QUIET COMPONENTS Widgets Charts PrintSupport)
 if(Qt6_FOUND)
     set(CMAKE_AUTOMOC ON)
     set(CMAKE_AUTORCC ON)
-    add_executable(calculator_gui gui/main.cpp gui/mainwindow.cpp)
-    target_link_libraries(calculator_gui calc_lib Qt6::Widgets Qt6::Charts)
+    add_executable(calculator_gui
+        gui/main.cpp
+        gui/mainwindow.cpp
+        gui/graphwindow.cpp
+        gui/qcustomplot/qcustomplot.cpp
+    )
+    target_link_libraries(calculator_gui calc_lib Qt6::Widgets Qt6::Charts Qt6::PrintSupport)
 endif()
